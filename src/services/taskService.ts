@@ -33,30 +33,45 @@ export class TaskService {
   async initializeTaskPools(): Promise<{ success: boolean; errors: string[] }> {
     const errors: string[] = [];
 
-    // Parse Danya's tasks
-    const danyaResult = this.taskParser.parseMarkdownFile(this.config.danyaMarkdownPath!);
-    if (!danyaResult.success) {
-      errors.push(`Danya: ${danyaResult.error}`);
-    }
+    try {
+      // Parse Danya's tasks
+      const danyaResult = this.taskParser.parseMarkdownFile(this.config.danyaMarkdownPath!);
+      if (!danyaResult.success) {
+        errors.push(`Danya: ${danyaResult.error}`);
+      }
 
-    // Parse Tema's tasks
-    const temaResult = this.taskParser.parseMarkdownFile(this.config.temaMarkdownPath!);
-    if (!temaResult.success) {
-      errors.push(`Tema: ${temaResult.error}`);
-    }
+      // Parse Tema's tasks
+      const temaResult = this.taskParser.parseMarkdownFile(this.config.temaMarkdownPath!);
+      if (!temaResult.success) {
+        errors.push(`Tema: ${temaResult.error}`);
+      }
 
-    // Initialize database with parsed tasks (even if some failed)
-    if (danyaResult.success || temaResult.success) {
-      this.dbService.initializeTaskPools(
-        danyaResult.success ? danyaResult.tasks : [],
-        temaResult.success ? temaResult.tasks : []
-      );
-    }
+      // Initialize database with parsed tasks (even if some failed)
+      if (danyaResult.success || temaResult.success) {
+        try {
+          this.dbService.initializeTaskPools(
+            danyaResult.success ? danyaResult.tasks : [],
+            temaResult.success ? temaResult.tasks : []
+          );
+        } catch (dbError) {
+          const dbErrorMessage = `Database initialization error: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`;
+          errors.push(dbErrorMessage);
+        }
+      } else {
+        errors.push('Both task files failed to parse - no tasks available');
+      }
 
-    return {
-      success: errors.length === 0,
-      errors
-    };
+      return {
+        success: errors.length === 0,
+        errors
+      };
+    } catch (error) {
+      const generalError = `Task pool initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      return {
+        success: false,
+        errors: [generalError]
+      };
+    }
   }
 
   /**

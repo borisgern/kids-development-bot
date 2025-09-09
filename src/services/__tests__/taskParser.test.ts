@@ -31,6 +31,8 @@ Some text here
       `;
 
       mockFs.existsSync.mockReturnValue(true);
+      mockFs.accessSync.mockReturnValue(undefined);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
       mockFs.readFileSync.mockReturnValue(mockContent);
 
       const result = parser.parseMarkdownFile('test.md');
@@ -52,6 +54,8 @@ Some text here
       `;
 
       mockFs.existsSync.mockReturnValue(true);
+      mockFs.accessSync.mockReturnValue(undefined);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
       mockFs.readFileSync.mockReturnValue(mockContent);
 
       const result = parser.parseMarkdownFile('test.md');
@@ -81,6 +85,8 @@ Some text without tasks
       `;
 
       mockFs.existsSync.mockReturnValue(true);
+      mockFs.accessSync.mockReturnValue(undefined);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
       mockFs.readFileSync.mockReturnValue(mockContent);
 
       const result = parser.parseMarkdownFile('test.md');
@@ -92,7 +98,7 @@ Some text without tasks
 
     it('should handle file read errors', () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockImplementation(() => {
+      mockFs.accessSync.mockImplementation(() => {
         throw new Error('Permission denied');
       });
 
@@ -109,6 +115,8 @@ Some text without tasks
       const file2Content = '- [ ] Task C';
 
       mockFs.existsSync.mockReturnValue(true);
+      mockFs.accessSync.mockReturnValue(undefined);
+      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
       mockFs.readFileSync.mockImplementation((filePath) => {
         if (filePath.toString().includes('file1')) return file1Content;
         if (filePath.toString().includes('file2')) return file2Content;
@@ -132,6 +140,12 @@ Some text without tasks
       mockFs.existsSync.mockImplementation((filePath) => {
         return !filePath.toString().includes('missing');
       });
+      mockFs.accessSync.mockImplementation((filePath) => {
+        if (filePath.toString().includes('missing')) {
+          throw new Error('File not found');
+        }
+      });
+      mockFs.statSync.mockReturnValue({ size: 1024 } as any);
       mockFs.readFileSync.mockReturnValue('- [ ] Task');
 
       const results = parser.parseMultipleFiles([

@@ -25,9 +25,13 @@ describe('BroadcastService Integration Tests', () => {
     mockTaskService.getDatabaseService = jest.fn();
 
     // Mock bot API
-    mockBot.api = {
-      sendMessage: jest.fn()
-    } as any;
+    Object.defineProperty(mockBot, 'api', {
+      value: {
+        sendMessage: jest.fn()
+      },
+      writable: true,
+      configurable: true
+    });
 
     broadcastService = new BroadcastService(mockTaskService);
   });
