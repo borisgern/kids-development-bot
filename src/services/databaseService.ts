@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Database, Task, TaskPool } from '@/types/database';
+import { Database, Task, TaskPool } from '../types/database';
 
 export class DatabaseService {
   private dbPath: string;
@@ -91,12 +91,12 @@ export class DatabaseService {
   }
 
   getUnsentTasks(child: 'danya' | 'tema'): Task[] {
-    return this.db.taskPools[child].tasks.filter(task => !task.sent);
+    return this.db.taskPools[child].tasks.filter((task: Task) => !task.sent);
   }
 
   markTasksAsSent(child: 'danya' | 'tema', taskTexts: string[]): void {
     const pool = this.db.taskPools[child];
-    pool.tasks.forEach(task => {
+    pool.tasks.forEach((task: Task) => {
       if (taskTexts.includes(task.text)) {
         task.sent = true;
       }
@@ -106,7 +106,7 @@ export class DatabaseService {
 
   resetTaskPool(child: 'danya' | 'tema'): void {
     const pool = this.db.taskPools[child];
-    pool.tasks.forEach(task => {
+    pool.tasks.forEach((task: Task) => {
       task.sent = false;
     });
     pool.lastReset = new Date().toISOString();
@@ -152,11 +152,24 @@ export class DatabaseService {
     return {
       subscribersCount: this.db.subscribers.length,
       danyaTasksTotal: this.db.taskPools.danya.tasks.length,
-      danyaTasksSent: this.db.taskPools.danya.tasks.filter(t => t.sent).length,
+      danyaTasksSent: this.db.taskPools.danya.tasks.filter((t: Task) => t.sent).length,
       danyaLastReset: this.db.taskPools.danya.lastReset,
       temaTasksTotal: this.db.taskPools.tema.tasks.length,
-      temaTasksSent: this.db.taskPools.tema.tasks.filter(t => t.sent).length,
+      temaTasksSent: this.db.taskPools.tema.tasks.filter((t: Task) => t.sent).length,
       temaLastReset: this.db.taskPools.tema.lastReset
     };
   }
 }
+
+// Create default instance
+const defaultDbService = new DatabaseService();
+
+// Export convenience functions for backward compatibility
+export const readDbData = (): Database => {
+  return defaultDbService['db'];
+};
+
+export const writeDbData = (data: Database): void => {
+  defaultDbService['db'] = data;
+  defaultDbService['saveDatabase']();
+};
