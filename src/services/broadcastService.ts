@@ -1,5 +1,6 @@
 import { bot } from '../lib/telegram';
 import { TaskService, DailyTaskSelection } from './taskService';
+import { defaultLogger } from './loggerService';
 
 export interface BroadcastResult {
   success: boolean;
@@ -39,6 +40,8 @@ export class BroadcastService {
       const dbService = this.taskService.getDatabaseService();
       const subscribers = dbService.getSubscribers();
       result.totalSubscribers = subscribers.length;
+      
+      defaultLogger.broadcastStarted(subscribers.length);
 
       if (subscribers.length === 0) {
         result.errors.push('No subscribers found');
@@ -69,11 +72,15 @@ export class BroadcastService {
       }
 
       result.success = result.successfulDeliveries > 0;
+      
+      defaultLogger.broadcastCompleted(result);
 
       return result;
 
     } catch (error) {
-      result.errors.push(`Broadcast error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = `Broadcast error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      result.errors.push(errorMessage);
+      defaultLogger.error('BROADCAST', errorMessage, error);
       return result;
     }
   }

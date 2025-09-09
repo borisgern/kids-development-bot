@@ -22,8 +22,8 @@ export class TaskService {
     this.dbService = new DatabaseService();
     this.taskParser = new TaskParser();
     this.config = {
-      danyaMarkdownPath: config?.danyaMarkdownPath || path.join(process.cwd(), 'Dans_current_development_progress.md'),
-      temaMarkdownPath: config?.temaMarkdownPath || path.join(process.cwd(), 'Temas_current_development_progress.md'),
+      danyaMarkdownPath: config?.danyaMarkdownPath || path.join(process.cwd(), 'data', 'Dans_current_development_progress.md'),
+      temaMarkdownPath: config?.temaMarkdownPath || path.join(process.cwd(), 'data', 'Temas_current_development_progress.md'),
     };
   }
 

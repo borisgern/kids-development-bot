@@ -1,5 +1,6 @@
-import cron from 'node-cron';
+import * as cron from 'node-cron';
 import { BroadcastService } from './broadcastService';
+import { defaultLogger } from './loggerService';
 
 export interface CronConfig {
   dailyBroadcastHour?: number;
@@ -32,14 +33,15 @@ export class CronService {
     console.log(`Setting up daily broadcast cron job: ${cronExpression} (${this.config.timezone})`);
     
     const job = cron.schedule(cronExpression, async () => {
-      console.log(`[${new Date().toISOString()}] Daily broadcast cron job triggered`);
+      defaultLogger.cronJobTriggered('daily-broadcast');
       await this.executeDailyBroadcast();
     }, {
-      scheduled: true,
       timezone: this.config.timezone
     });
 
     this.jobs.set('daily-broadcast', job);
+    
+    defaultLogger.cronJobStarted('daily-broadcast', cronExpression, this.config.timezone!);
     console.log(`✅ Daily broadcast cron job started: ${this.config.dailyBroadcastHour}:${this.config.dailyBroadcastMinute?.toString().padStart(2, '0')} ${this.config.timezone}`);
   }
 
@@ -58,7 +60,6 @@ export class CronService {
       console.log(`[${new Date().toISOString()}] Test broadcast cron job triggered`);
       await this.executeTestBroadcast();
     }, {
-      scheduled: true,
       timezone: this.config.timezone
     });
 
@@ -71,6 +72,7 @@ export class CronService {
    */
   private async executeDailyBroadcast(): Promise<void> {
     try {
+      defaultLogger.broadcastStarted(0); // Will be updated by broadcast service
       const result = await this.broadcastService.sendDailyTasks();
       
       const summary = {
@@ -82,13 +84,16 @@ export class CronService {
         errorCount: result.errors.length
       };
 
+      defaultLogger.cronJobCompleted('daily-broadcast', result.success, summary);
       console.log(`[${new Date().toISOString()}] Daily broadcast completed:`, summary);
 
       if (!result.success) {
+        defaultLogger.error('CRON', 'Daily broadcast had errors', result.errors);
         console.error(`[${new Date().toISOString()}] Daily broadcast errors:`, result.errors);
       }
 
     } catch (error) {
+      defaultLogger.error('CRON', 'Daily broadcast cron job failed', error);
       console.error(`[${new Date().toISOString()}] Daily broadcast cron job failed:`, error);
     }
   }
@@ -145,8 +150,9 @@ export class CronService {
    */
   getJobsStatus(): { [key: string]: boolean } {
     const status: { [key: string]: boolean } = {};
-    for (const [jobName, job] of this.jobs.entries()) {
-      status[jobName] = job.running;
+    for (const [jobName] of this.jobs.entries()) {
+      // node-cron doesn't expose running status, assume true if job exists
+      status[jobName] = true;
     }
     return status;
   }
