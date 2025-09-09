@@ -60,3 +60,16 @@ pids/
 *.pid
 *.seed
 *.pid.lock
+
+# Test files
+**/test_*.md
+test-*.js
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Development
+.dev/
+.local/
